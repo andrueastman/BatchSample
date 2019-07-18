@@ -25,24 +25,19 @@ namespace EnhancedBatch
 
             User user = null;
             Photo photo = null;
-            MailFolderMessagesCollectionPage mail = null;
-
+            
             var user2 = graphClient.Me.Request().GetAsync().Result;
 
             var query = new HttpQuery(graphClient);
             query.AddRequest<User>(graphClient.Me.Request(), u => user = u);
             query.AddRequest<Photo>(graphClient.Me.Calendar.Events.Request(), p => photo = p);
-            query.AddRequest<MailFolderMessagesCollectionPage>(graphClient.Me.MailFolders.Inbox.Messages.Request(), m => mail = m);
+            //query.AddRequest<MailFolderMessagesCollectionPage>(graphClient.Me.MailFolders.Inbox.Messages.Request(), m => mail = m);
 
             query.ExecuteAsync();
 
             Console.WriteLine("Display Name: " + user.DisplayName);
             Console.WriteLine("Photo: " + photo.TakenDateTime);
 
-            foreach (var email in mail)
-            {
-                Console.WriteLine("Email: " + email.Subject);
-            }
         }
     }
 }

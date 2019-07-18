@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Graph;
-using Newtonsoft.Json;
 
 namespace EnhancedBatch
 {
@@ -23,32 +21,36 @@ namespace EnhancedBatch
         public void AddRequest<T>(IBaseRequest request, Func<T, T> handlerFunc)
         {
             HttpRequestMessage httpRequestMessage = request.GetHttpRequestMessage();
-            Task task = GraphClient.HttpProvider.SendAsync(httpRequestMessage).ContinueWith(
-                async t =>
+            Task task = SendMessage<T>(httpRequestMessage).ContinueWith(t =>
+            {
+                if (t.IsCompleted)
                 {
-                    if (t.IsCompleted)
-                    {
-                        HttpResponseMessage response = t.Result;
-                        if (response.Content != null)
-                        {
-                            var responseString = await response.Content.ReadAsStringAsync();
-                            T variaDeserializeObject = GraphClient.HttpProvider.Serializer.DeserializeObject<T>(responseString);
-                            handlerFunc(variaDeserializeObject);
-                        }
-                    }
+                    handlerFunc(t.Result);
                 }
-            );
+            });
 
             _requestCollection.Add(task);
         }
 
-        public void ConfigureBatchSize(int size)
+        public async Task<T> SendMessage<T>(HttpRequestMessage httpRequestMessage)
         {
-            BatchSize = size;
+            await GraphClient.AuthenticationProvider.AuthenticateRequestAsync(httpRequestMessage);
+
+            HttpResponseMessage response =  await GraphClient.HttpProvider.SendAsync(httpRequestMessage);
+
+            if (response.Content != null)
+            {
+                var responseString = await response.Content.ReadAsStringAsync();
+                return  GraphClient.HttpProvider.Serializer.DeserializeObject<T>(responseString);
+                
+            }
+
+            return default;
         }
 
         public void ExecuteAsync()
         {
+
             Task.WaitAll(_requestCollection.ToArray());
         }
     }
