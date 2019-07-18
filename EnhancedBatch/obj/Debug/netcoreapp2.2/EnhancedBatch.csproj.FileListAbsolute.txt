@@ -1,0 +1,11 @@
+C:\Users\v-anomon\source\repos\EnhancedBatch\EnhancedBatch\bin\Debug\netcoreapp2.2\EnhancedBatch.deps.json
+C:\Users\v-anomon\source\repos\EnhancedBatch\EnhancedBatch\bin\Debug\netcoreapp2.2\EnhancedBatch.runtimeconfig.json
+C:\Users\v-anomon\source\repos\EnhancedBatch\EnhancedBatch\bin\Debug\netcoreapp2.2\EnhancedBatch.runtimeconfig.dev.json
+C:\Users\v-anomon\source\repos\EnhancedBatch\EnhancedBatch\bin\Debug\netcoreapp2.2\EnhancedBatch.dll
+C:\Users\v-anomon\source\repos\EnhancedBatch\EnhancedBatch\obj\Debug\netcoreapp2.2\EnhancedBatch.csprojAssemblyReference.cache
+C:\Users\v-anomon\source\repos\EnhancedBatch\EnhancedBatch\obj\Debug\netcoreapp2.2\EnhancedBatch.csproj.CoreCompileInputs.cache
+C:\Users\v-anomon\source\repos\EnhancedBatch\EnhancedBatch\obj\Debug\netcoreapp2.2\EnhancedBatch.AssemblyInfoInputs.cache
+C:\Users\v-anomon\source\repos\EnhancedBatch\EnhancedBatch\obj\Debug\netcoreapp2.2\EnhancedBatch.AssemblyInfo.cs
+C:\Users\v-anomon\source\repos\EnhancedBatch\EnhancedBatch\bin\Debug\netcoreapp2.2\EnhancedBatch.pdb
+C:\Users\v-anomon\source\repos\EnhancedBatch\EnhancedBatch\obj\Debug\netcoreapp2.2\EnhancedBatch.dll
+C:\Users\v-anomon\source\repos\EnhancedBatch\EnhancedBatch\obj\Debug\netcoreapp2.2\EnhancedBatch.pdb
