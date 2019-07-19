@@ -24,19 +24,33 @@ namespace EnhancedBatch
             GraphServiceClient graphClient = new GraphServiceClient(authenticationProvider);
 
             User user = null;
-            Photo photo = null;
-            
-            var user2 = graphClient.Me.Request().GetAsync().Result;
+            User user1 = null;
+            User user2 = null;
+            User user3 = null;
+            User user4 = null;
+            User user5 = null;
+            //            Photo photo = null;
 
             var query = new HttpQuery(graphClient);
             query.AddRequest<User>(graphClient.Me.Request(), u => user = u);
-            query.AddRequest<Photo>(graphClient.Me.Calendar.Events.Request(), p => photo = p);
+            query.AddRequest<User>(graphClient.Me.Request(), u => user1 = u);
+            query.AddRequest<User>(graphClient.Me.Request(), u => user2 = u);
+            query.AddRequest<User>(graphClient.Me.Request(), u => user3 = u);
+            query.AddRequest<User>(graphClient.Me.Request(), u => user4 = u);
+            query.AddRequest<User>(graphClient.Me.Request(), u => user5 = u);
+            //query.AddRequest<Photo>(graphClient.Me.Calendar.Events.Request(), p => photo = p);
             //query.AddRequest<MailFolderMessagesCollectionPage>(graphClient.Me.MailFolders.Inbox.Messages.Request(), m => mail = m);
 
             query.ExecuteAsync();
 
             Console.WriteLine("Display Name: " + user.DisplayName);
-            Console.WriteLine("Photo: " + photo.TakenDateTime);
+            Console.WriteLine("Display Name: " + user1.DisplayName);
+            Console.WriteLine("Display Name: " + user2.DisplayName);
+            Console.WriteLine("Display Name: " + user3.DisplayName);
+            Console.WriteLine("Display Name: " + user4.DisplayName);
+            Console.WriteLine("Display Name: " + user5.DisplayName);
+            //Console.WriteLine("Photo: " + photo.TakenDateTime);
+            //query.ExecuteBatch();
 
         }
     }
