@@ -23,35 +23,33 @@ namespace EnhancedBatch
             /* Get the client */
             GraphServiceClient graphClient = new GraphServiceClient(authenticationProvider);
 
+            var query = new HttpQuery(graphClient);
+
+            /* Request version 1 */
+            /* Uses a callback */
             User user = null;
             User user1 = null;
-            User user2 = null;
-            User user3 = null;
-            User user4 = null;
-            User user5 = null;
-            //            Photo photo = null;
-
-            var query = new HttpQuery(graphClient);
             query.AddRequest<User>(graphClient.Me.Request(), u => user = u);
             query.AddRequest<User>(graphClient.Me.Request(), u => user1 = u);
-            query.AddRequest<User>(graphClient.Me.Request(), u => user2 = u);
-            query.AddRequest<User>(graphClient.Me.Request(), u => user3 = u);
-            query.AddRequest<User>(graphClient.Me.Request(), u => user4 = u);
-            query.AddRequest<User>(graphClient.Me.Request(), u => user5 = u);
-            //query.AddRequest<Photo>(graphClient.Me.Calendar.Events.Request(), p => photo = p);
-            //query.AddRequest<MailFolderMessagesCollectionPage>(graphClient.Me.MailFolders.Inbox.Messages.Request(), m => mail = m);
 
             query.ExecuteAsync();
+            Console.WriteLine("Version 1");
+            Console.WriteLine("Display Name user: " + user.DisplayName);
+            Console.WriteLine("Display Name user1: " + user1.DisplayName);
+            Console.WriteLine("\r\n\r\n");
 
-            Console.WriteLine("Display Name: " + user.DisplayName);
-            Console.WriteLine("Display Name: " + user1.DisplayName);
-            Console.WriteLine("Display Name: " + user2.DisplayName);
-            Console.WriteLine("Display Name: " + user3.DisplayName);
-            Console.WriteLine("Display Name: " + user4.DisplayName);
-            Console.WriteLine("Display Name: " + user5.DisplayName);
-            //Console.WriteLine("Photo: " + photo.TakenDateTime);
-            //query.ExecuteBatch();
+            /* Request version 2 */
+            /* Uses the dynamic type */
+            dynamic result = query.PopulateAsync(new
+            {
+                Me = graphClient.Me.Request(),
+                Calendar = graphClient.Me.Calendar.Request()
+            });
 
+            Console.WriteLine("Version 2");
+            Console.WriteLine("Display Name user: " + result.Me.displayName);
+            Console.WriteLine("Calendar Owner Address: " + result.Calendar.owner.address);
+            Console.WriteLine("\r\n\r\n");
         }
     }
 }
