@@ -28,14 +28,14 @@ namespace EnhancedBatch
             /* Request version 1 */
             /* Uses a callback */
             User user = null;
-            User user1 = null;
+            Calendar calendar = null;
             query.AddRequest<User>(graphClient.Me.Request(), u => user = u);
-            query.AddRequest<User>(graphClient.Me.Request(), u => user1 = u);
+            query.AddRequest<Calendar>(graphClient.Me.Calendar.Request(), cal => calendar = cal);
 
             query.ExecuteAsync();
             Console.WriteLine("Version 1");
             Console.WriteLine("Display Name user: " + user.DisplayName);
-            Console.WriteLine("Display Name user1: " + user1.DisplayName);
+            Console.WriteLine("Display Owner Address: " + calendar.Owner.Address);
             Console.WriteLine("\r\n\r\n");
 
             /* Request version 2 */
