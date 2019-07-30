@@ -7,7 +7,7 @@ using Microsoft.Graph;
 
 namespace EnhancedBatch
 {
-    internal class HttpQuery
+    public class HttpQuery
     {
         public GraphServiceClient GraphClient { get; }
         private readonly List<Task> _taskCollection;
@@ -19,7 +19,7 @@ namespace EnhancedBatch
             TokenBarrier().Wait();
         }
 
-        public void AddRequest<T>(IBaseRequest request, Func<T, T> handlerFunc)
+        public void AddRequest<T>(IBaseRequest request, Action<T> handlerFunc)
         {
             HttpRequestMessage httpRequestMessage = request.GetHttpRequestMessage();
 
@@ -37,7 +37,6 @@ namespace EnhancedBatch
         public async Task<T> SendMessage<T>(HttpRequestMessage httpRequestMessage)
         {
             await GraphClient.AuthenticationProvider.AuthenticateRequestAsync(httpRequestMessage);
-
             HttpResponseMessage response =  await GraphClient.HttpProvider.SendAsync(httpRequestMessage);
 
             if (response.Content != null)
@@ -56,13 +55,11 @@ namespace EnhancedBatch
             var dictionary = (IDictionary<string, object>)returnObject;
             foreach (var typeArguments in model.GetType().GetProperties())
             {
-
                 if (typeArguments.GetValue(model) is IBaseRequest request)
                 {
                     AddRequest<dynamic>(request,u =>
                     {
                         dictionary.Add(typeArguments.Name, u);
-                        return u;
                     });
                 }
             }
@@ -72,7 +69,7 @@ namespace EnhancedBatch
             return returnObject;
         }
 
-        public async Task TokenBarrier()
+        private async Task TokenBarrier()
         {
             var user2 = await GraphClient.Me.Request().GetAsync(); //HACK!!!! //TODO //FIXME
             Console.WriteLine("Barrier crossed: " + user2.DisplayName);

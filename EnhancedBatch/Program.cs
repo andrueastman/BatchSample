@@ -8,7 +8,7 @@ namespace EnhancedBatch
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
             /* Do the auth stuff first */
             string clientId = "d662ac70-7482-45af-9dc3-c3cde8eeede4";
@@ -50,6 +50,18 @@ namespace EnhancedBatch
             Console.WriteLine("Display Name user: " + result.Me.displayName);
             Console.WriteLine("Calendar Owner Address: " + result.Calendar.owner.address);
             Console.WriteLine("\r\n\r\n");
+
+            /* Request version 3 */
+            /* Uses the dynamic type */
+            var model = new ViewModel();
+            var responseHandler = new ResponseHandler(model, query);
+            responseHandler.OnSuccess<User>(u => model.Me = u);
+            responseHandler.OnSuccess<Stream>(p => model.Photo = p);
+            responseHandler.OnClientError(e => Console.WriteLine(e.Message));
+            responseHandler.OnServerError(e => Console.WriteLine(e.Message));
+
+            graphClient.Me.Request().GetAsync<User>(responseHandler);
+            graphClient.Me.Photo.Content.Request().GetAsync<Photo>(responseHandler);
         }
     }
 }
