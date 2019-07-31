@@ -1,5 +1,4 @@
-﻿using System.Net.Http;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Graph;
 
 namespace EnhancedBatch
@@ -8,7 +7,15 @@ namespace EnhancedBatch
     {
         public static void GetAsync<T>(this IBaseRequest request , ResponseHandler responseHandler)
         {
-            responseHandler.Query.AddRequest<T>(request,responseHandler.GetSuccessAction<T>(typeof(T)));
+            Task<T> requestTask =  responseHandler.Query.SendMessage<T>(request.GetHttpRequestMessage());
+            requestTask.ContinueWith(t =>
+            {
+                if (t.IsCompleted)
+                {
+                    responseHandler.InvokeSuccessAction(t.Result);
+                }
+            });
+            requestTask.Wait();
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using Microsoft.Graph;
 using Microsoft.Graph.Auth;
 using Microsoft.Identity.Client;
@@ -22,20 +21,18 @@ namespace EnhancedBatch
 
             /* Get the client */
             GraphServiceClient graphClient = new GraphServiceClient(authenticationProvider);
-
             var query = new HttpQuery(graphClient);
 
             /* Request version 1 */
             /* Uses a callback */
-            User user = null;
-            Calendar calendar = null;
-            query.AddRequest<User>(graphClient.Me.Request(), u => user = u);
-            query.AddRequest<Calendar>(graphClient.Me.Calendar.Request(), cal => calendar = cal);
+            var firstModel = new ViewModel();
+            query.AddRequest<User>(graphClient.Me.Request(), u => firstModel.Me = u);
+            query.AddRequest<Calendar>(graphClient.Me.Calendar.Request(), cal => firstModel.Calendar = cal);
 
             query.ExecuteAsync();
             Console.WriteLine("Version 1");
-            Console.WriteLine("Display Name user: " + user.DisplayName);
-            Console.WriteLine("Display Owner Address: " + calendar.Owner.Address);
+            Console.WriteLine("Display Name user: " + firstModel.Me.DisplayName);
+            Console.WriteLine("Display Owner Address: " + firstModel.Calendar.Owner.Address);
             Console.WriteLine("\r\n\r\n");
 
             /* Request version 2 */
@@ -53,15 +50,19 @@ namespace EnhancedBatch
 
             /* Request version 3 */
             /* Uses the dynamic type */
-            var model = new ViewModel();
-            var responseHandler = new ResponseHandler(model, query);
-            responseHandler.OnSuccess<User>(u => model.Me = u);
-            responseHandler.OnSuccess<Stream>(p => model.Photo = p);
+            var secondModel = new ViewModel();
+            var responseHandler = new ResponseHandler(query);
+            responseHandler.OnSuccess<User>(u => secondModel.Me = u);
+            responseHandler.OnSuccess<Calendar>(cal => secondModel.Calendar = cal);
             responseHandler.OnClientError(e => Console.WriteLine(e.Message));
             responseHandler.OnServerError(e => Console.WriteLine(e.Message));
 
             graphClient.Me.Request().GetAsync<User>(responseHandler);
-            graphClient.Me.Photo.Content.Request().GetAsync<Photo>(responseHandler);
+            graphClient.Me.Calendar.Request().GetAsync<Calendar>(responseHandler);
+            Console.WriteLine("Version 3");
+            Console.WriteLine("Display Name user: " + secondModel.Me.DisplayName);
+            Console.WriteLine("Calendar Owner Address: " + secondModel.Calendar.Owner.Address);
+            Console.WriteLine("\r\n\r\n");
         }
     }
 }

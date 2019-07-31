@@ -1,5 +1,4 @@
-﻿using System.IO;
-using Microsoft.Graph;
+﻿using Microsoft.Graph;
 
 namespace EnhancedBatch
 {
@@ -7,7 +6,6 @@ namespace EnhancedBatch
     {
         // one could probable extend this class and add more properties to it
         public User Me { get; set; }
-        public User Manager { get; set; }
-        public Stream Photo { get; set; }
+        public Calendar Calendar { get; set; }
     }
 }

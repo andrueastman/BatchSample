@@ -1,62 +1,62 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Graph;
 
 namespace EnhancedBatch
 {
     public class ResponseHandler
     {
-        public ViewModel Model { get; }
         public HttpQuery Query { get; }
         private Action<Exception> _serverExceptionHandler;
         private Action<Exception> _clientExceptionHandler;
-        private readonly Dictionary<Type, object> delegateMap;
+        private readonly Dictionary<Type, object> _delegateMap;
 
-        public ResponseHandler(ViewModel viewModel, HttpQuery query)
+        public ResponseHandler(HttpQuery query)
         {
-            this.Model = viewModel;
-            this.Query = query;
+            Query = query;
+            _delegateMap = new Dictionary<Type, object>();
         }
         
-        internal void OnClientError(Action<Exception> exceptionProcessor)
-        {
-            _clientExceptionHandler = exceptionProcessor;
-        }
-
         internal void OnSuccess<T>(Action<T> successHandler)
         {
-            if (!delegateMap.ContainsKey(typeof(T)))
+            if (!_delegateMap.ContainsKey(typeof(T)))
             {
-                delegateMap[typeof(T)] = successHandler;
+                _delegateMap[typeof(T)] = successHandler;
             }
         }
 
         public void InvokeSuccessAction<T>(T item)
         {
-            object tmp;
-            if (delegateMap.TryGetValue(typeof(T), out tmp))
+            Action<T> handler = GetSuccessAction<T>(typeof(T));
+            try
             {
-                Action<T> handler = (Action<T>) tmp;
                 handler(item);
+            }
+            catch (Exception e)
+            {
+                _serverExceptionHandler(e);
+                _clientExceptionHandler(e);
             }
         }
 
         public Action<T> GetSuccessAction<T>(Type type)
         {
-            object tmp;
-            if (delegateMap.TryGetValue(type, out tmp))
+            if (_delegateMap.TryGetValue(type, out var function))
             {
-                Action<T> handler = (Action<T>)tmp;
+                Action<T> handler = (Action<T>)function;
                 return handler;
             }
 
             return default;
         }
 
-        internal void OnServerError(Action<Exception> exceptionProcessor)
+        internal void OnServerError(Action<Exception> serverExceptionHandler)
         {
-            _serverExceptionHandler = exceptionProcessor;
+            _serverExceptionHandler = serverExceptionHandler;
+        }
+
+        internal void OnClientError(Action<Exception> clientExceptionHandler)
+        {
+            _clientExceptionHandler = clientExceptionHandler;
         }
     }
 }
