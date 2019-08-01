@@ -1,10 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Graph;
-using Newtonsoft.Json;
 
 namespace EnhancedBatch
 {
@@ -23,7 +22,6 @@ namespace EnhancedBatch
         public void AddRequest<T>(IBaseRequest request, Action<T> handlerFunc)
         {
             HttpRequestMessage httpRequestMessage = request.GetHttpRequestMessage();
-//            GraphClient.AuthenticationProvider.AuthenticateRequestAsync(httpRequestMessage).Wait();
 
             Task task = SendMessage<T>(httpRequestMessage).ContinueWith(t =>
             {
@@ -38,13 +36,15 @@ namespace EnhancedBatch
 
         private async Task<T> SendMessage<T>(HttpRequestMessage httpRequestMessage)
         {
+            await GraphClient.AuthenticationProvider.AuthenticateRequestAsync(httpRequestMessage).ConfigureAwait(false);
+
             HttpResponseMessage response =  await GraphClient.HttpProvider.SendAsync(httpRequestMessage).ConfigureAwait(false);
 
             if (response.Content == null)
                 return default;
 
             var responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            return JsonConvert.DeserializeObject<T>(responseString);
+            return GraphClient.HttpProvider.Serializer.DeserializeObject<T>(responseString);
 
         }
 

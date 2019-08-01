@@ -51,8 +51,8 @@ namespace EnhancedBatch
             {
                 if (responseMessage.Content == null)
                     return;
-
-                var responseString = await responseMessage.Content.ReadAsStringAsync();
+                 
+                var responseString = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
                 var returnObject = JsonConvert.DeserializeObject<T>(responseString);
                 InvokeSuccessAction(returnObject);
             }
