@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Graph;
 using Microsoft.Graph.Auth;
 using Microsoft.Identity.Client;
@@ -7,7 +8,7 @@ namespace EnhancedBatch
 {
     class Program
     {
-        static void Main()
+        public static async Task Main()
         {
             /* Do the auth stuff first */
             string clientId = "d662ac70-7482-45af-9dc3-c3cde8eeede4";
@@ -29,7 +30,8 @@ namespace EnhancedBatch
             query.AddRequest<User>(graphClient.Me.Request(), u => firstModel.Me = u);
             query.AddRequest<Calendar>(graphClient.Me.Calendar.Request(), cal => firstModel.Calendar = cal);
 
-            query.ExecuteAsync();
+            query.ExecuteAsync();//run them at the same time :)
+
             Console.WriteLine("Version 1");
             Console.WriteLine("Display Name user: " + firstModel.Me.DisplayName);
             Console.WriteLine("Display Owner Address: " + firstModel.Calendar.Owner.Address);
@@ -51,14 +53,15 @@ namespace EnhancedBatch
             /* Request version 3 */
             /* Uses the dynamic type */
             var secondModel = new ViewModel();
-            var responseHandler = new ResponseHandler(query);
+            var responseHandler = new ResponseHandler();
             responseHandler.OnSuccess<User>(u => secondModel.Me = u);
             responseHandler.OnSuccess<Calendar>(cal => secondModel.Calendar = cal);
             responseHandler.OnClientError(e => Console.WriteLine(e.Message));
             responseHandler.OnServerError(e => Console.WriteLine(e.Message));
 
-            graphClient.Me.Request().GetAsync<User>(responseHandler);
-            graphClient.Me.Calendar.Request().GetAsync<Calendar>(responseHandler);
+            await graphClient.Me.Request().GetAsync(responseHandler);
+            await graphClient.Me.Calendar.Request().GetAsync(responseHandler);
+
             Console.WriteLine("Version 3");
             Console.WriteLine("Display Name user: " + secondModel.Me.DisplayName);
             Console.WriteLine("Calendar Owner Address: " + secondModel.Calendar.Owner.Address);

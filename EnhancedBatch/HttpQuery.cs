@@ -1,16 +1,17 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Graph;
+using Newtonsoft.Json;
 
 namespace EnhancedBatch
 {
     public class HttpQuery
     {
         public GraphServiceClient GraphClient { get; }
-        private readonly List<Task> _taskCollection;
+        private List<Task> _taskCollection;
 
         public HttpQuery(GraphServiceClient graphClient)
         {
@@ -22,6 +23,7 @@ namespace EnhancedBatch
         public void AddRequest<T>(IBaseRequest request, Action<T> handlerFunc)
         {
             HttpRequestMessage httpRequestMessage = request.GetHttpRequestMessage();
+//            GraphClient.AuthenticationProvider.AuthenticateRequestAsync(httpRequestMessage).Wait();
 
             Task task = SendMessage<T>(httpRequestMessage).ContinueWith(t =>
             {
@@ -34,19 +36,16 @@ namespace EnhancedBatch
             _taskCollection.Add(task);
         }
 
-        public async Task<T> SendMessage<T>(HttpRequestMessage httpRequestMessage)
+        private async Task<T> SendMessage<T>(HttpRequestMessage httpRequestMessage)
         {
-            await GraphClient.AuthenticationProvider.AuthenticateRequestAsync(httpRequestMessage);
-            HttpResponseMessage response =  await GraphClient.HttpProvider.SendAsync(httpRequestMessage);
+            HttpResponseMessage response =  await GraphClient.HttpProvider.SendAsync(httpRequestMessage).ConfigureAwait(false);
 
-            if (response.Content != null)
-            {
-                var responseString = await response.Content.ReadAsStringAsync();
-                return  GraphClient.HttpProvider.Serializer.DeserializeObject<T>(responseString);
-                
-            }
+            if (response.Content == null)
+                return default;
 
-            return default;
+            var responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            return JsonConvert.DeserializeObject<T>(responseString);
+
         }
 
         public dynamic PopulateAsync(object model)
@@ -78,6 +77,7 @@ namespace EnhancedBatch
         public void ExecuteAsync()
         {
             Task.WaitAll(_taskCollection.ToArray());
+            _taskCollection = new List<Task>();
         }
     }
 }

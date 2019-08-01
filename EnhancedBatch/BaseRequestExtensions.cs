@@ -5,17 +5,24 @@ namespace EnhancedBatch
 {
     public static class BaseRequestExtensions
     {
-        public static void GetAsync<T>(this IBaseRequest request , ResponseHandler responseHandler)
+        public static async Task GetAsync<T>(this IBaseRequest request , ResponseHandler responseHandler)
         {
-            Task<T> requestTask =  responseHandler.Query.SendMessage<T>(request.GetHttpRequestMessage());
-            requestTask.ContinueWith(t =>
-            {
-                if (t.IsCompleted)
-                {
-                    responseHandler.InvokeSuccessAction(t.Result);
-                }
-            });
-            requestTask.Wait();
+            var message = request.GetHttpRequestMessage();
+            await request.Client.AuthenticationProvider.AuthenticateRequestAsync(message);
+
+            var httpResponse = await request.Client.HttpProvider.SendAsync(message);
+
+            await responseHandler.HandleResponse<T>(httpResponse);
+        }
+
+        public static async Task GetAsync(this IUserRequest request, ResponseHandler responseHandler)
+        {
+            await GetAsync<User>(request,responseHandler);
+        }
+
+        public static async Task GetAsync(this ICalendarRequest request, ResponseHandler responseHandler)
+        {
+            await GetAsync<Calendar>(request, responseHandler);
         }
     }
 }
