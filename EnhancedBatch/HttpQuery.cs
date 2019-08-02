@@ -10,7 +10,7 @@ namespace EnhancedBatch
     public class HttpQuery
     {
         public GraphServiceClient GraphClient { get; }
-        private List<Task> _taskCollection;
+        private readonly List<Task> _taskCollection;
 
         public HttpQuery(GraphServiceClient graphClient)
         {
