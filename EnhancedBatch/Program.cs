@@ -25,14 +25,20 @@ namespace EnhancedBatch
             var query = new HttpQuery(graphClient);
 
             await Run0(graphClient);
-            Run1(query, graphClient);
-            Run2(query, graphClient);
+            await Run1(query, graphClient);
+            await Run2(query, graphClient);
             await Run3(graphClient);
 
             await Run0(graphClient);
-            Run1(query, graphClient);
-            Run2(query, graphClient);
+            await Run1(query, graphClient);
+            await Run2(query, graphClient);
             await Run3(graphClient);
+
+            await Run0(graphClient);
+            await Run1(query, graphClient);
+            await Run2(query, graphClient);
+            await Run3(graphClient);
+
         }
 
         public static async Task Run0(GraphServiceClient graphClient)
@@ -53,7 +59,7 @@ namespace EnhancedBatch
             Console.WriteLine($"Elapsed Time {elapsedMs}");
             Console.WriteLine("\r\n\r\n");
         }
-        public static void Run1(HttpQuery query, GraphServiceClient graphClient)
+        public static async Task Run1(HttpQuery query, GraphServiceClient graphClient)
         {
             /* Request version 1 */
             /* Uses a callback */
@@ -63,7 +69,7 @@ namespace EnhancedBatch
             query.AddRequest<Calendar>(graphClient.Me.Calendar.Request(), cal => firstModel.Calendar = cal);
             query.AddRequest<Drive>(graphClient.Me.Drive.Request(), dr => firstModel.Drive = dr);
 
-            query.ExecuteAsync();//run them at the same time :)
+            await query.ExecuteAsync();//run them at the same time :)
             Console.WriteLine("Version 1");
             Console.WriteLine("Display Name user: " + firstModel.Me.DisplayName);
             Console.WriteLine("Display Owner Address: " + firstModel.Calendar.Owner.Address);
@@ -74,12 +80,12 @@ namespace EnhancedBatch
             Console.WriteLine("\r\n\r\n");
         }
 
-        public static void Run2(HttpQuery query, GraphServiceClient graphClient)
+        public static async Task Run2(HttpQuery query, GraphServiceClient graphClient)
         {
             /* Request version 2 */
             /* Uses the dynamic type */
             var watch = System.Diagnostics.Stopwatch.StartNew();
-            dynamic result = query.PopulateAsync(new
+            dynamic result = await query.PopulateAsync(new
             {
                 Me = graphClient.Me.Request(),
                 Calendar = graphClient.Me.Calendar.Request(),

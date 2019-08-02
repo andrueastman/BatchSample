@@ -7,11 +7,7 @@ namespace EnhancedBatch
     {
         public static async Task GetAsync<T>(this IBaseRequest request , ResponseHandler responseHandler)
         {
-            var message = request.GetHttpRequestMessage();
-            await request.Client.AuthenticationProvider.AuthenticateRequestAsync(message).ConfigureAwait(false);
-
-            var httpResponse = await request.Client.HttpProvider.SendAsync(message).ConfigureAwait(false);
-
+            var httpResponse = await request.Client.HttpProvider.SendAsync(request.GetHttpRequestMessage()).ConfigureAwait(false);
             await responseHandler.HandleResponse<T>(httpResponse).ConfigureAwait(false);
         }
 

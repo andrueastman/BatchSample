@@ -15,7 +15,7 @@ namespace EnhancedBatch
         public HttpQuery(GraphServiceClient graphClient)
         {
             GraphClient = graphClient;
-            _taskCollection = new List<Task>();//empty at start
+            _taskCollection = new List<Task>();
             TokenBarrier().Wait();
         }
 
@@ -36,8 +36,6 @@ namespace EnhancedBatch
 
         private async Task<T> SendMessage<T>(HttpRequestMessage httpRequestMessage)
         {
-            await GraphClient.AuthenticationProvider.AuthenticateRequestAsync(httpRequestMessage).ConfigureAwait(false);
-
             HttpResponseMessage response =  await GraphClient.HttpProvider.SendAsync(httpRequestMessage).ConfigureAwait(false);
 
             if (response.Content == null)
@@ -48,36 +46,50 @@ namespace EnhancedBatch
 
         }
 
-        public dynamic PopulateAsync(object model)
+        public async Task<dynamic> PopulateAsync(object model)
         {
             dynamic returnObject = new ExpandoObject();
             var dictionary = (IDictionary<string, object>)returnObject;
+
             foreach (var typeArguments in model.GetType().GetProperties())
             {
-                if (typeArguments.GetValue(model) is IBaseRequest request)
+                if (typeArguments.GetValue(model) is IBaseRequest request)//make sure the type is a base request
                 {
                     AddRequest<dynamic>(request,u =>
                     {
-                        dictionary.Add(typeArguments.Name, u);
+                        dictionary.Add(typeArguments.Name, u);//map the name with the object that comes back
                     });
                 }
             }
 
-            ExecuteAsync();
+            await ExecuteAsync();
 
             return returnObject;
         }
 
         private async Task TokenBarrier()
         {
-            var user2 = await GraphClient.Me.Request().GetAsync(); //HACK!!!! //TODO //FIXME
-            Console.WriteLine("Barrier crossed: " + user2.DisplayName);
+            //Just authenticate a dummy message but no need to send it out coz we just need a valid token in the cache
+            var dummyRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/me/");
+            await GraphClient.AuthenticationProvider.AuthenticateRequestAsync(dummyRequestMessage);
+            Console.WriteLine("Token barrier crossed");
         }
 
-        public void ExecuteAsync()
+        public async Task ExecuteAsync()
         {
-            Task.WaitAll(_taskCollection.ToArray());
-            _taskCollection = new List<Task>();
+            try
+            {
+                await Task.WhenAll(_taskCollection.ToArray());
+            }
+            catch (AggregateException e)
+            {
+                Console.WriteLine(e);
+                //throw;
+            }
+            finally
+            {
+                _taskCollection.Clear();
+            }
         }
     }
 }
