@@ -41,6 +41,11 @@ namespace EnhancedBatch
 
         }
 
+        /// <summary>
+        /// Run the request in the normal fashion.
+        /// </summary>
+        /// <param name="graphClient"></param>
+        /// <returns></returns>
         public static async Task Run0(GraphServiceClient graphClient)
         {
             /* Request version 0 */
@@ -59,6 +64,13 @@ namespace EnhancedBatch
             Console.WriteLine($"Elapsed Time {elapsedMs}");
             Console.WriteLine("\r\n\r\n");
         }
+
+        /// <summary>
+        /// Use the HttpQuery class to add requests and then execute them.
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="graphClient"></param>
+        /// <returns></returns>
         public static async Task Run1(HttpQuery query, GraphServiceClient graphClient)
         {
             /* Request version 1 */
@@ -80,6 +92,12 @@ namespace EnhancedBatch
             Console.WriteLine("\r\n\r\n");
         }
 
+        /// <summary>
+        /// Use the HttpQuery Class to populate a dynamic type to use.
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="graphClient"></param>
+        /// <returns></returns>
         public static async Task Run2(HttpQuery query, GraphServiceClient graphClient)
         {
             /* Request version 2 */
@@ -102,6 +120,11 @@ namespace EnhancedBatch
             Console.WriteLine("\r\n\r\n");
         }
 
+        /// <summary>
+        /// Use a response handler to launch a fire and forget fashioned call.
+        /// </summary>
+        /// <param name="graphClient"></param>
+        /// <returns></returns>
         public static async Task Run3(GraphServiceClient graphClient)
         {
             /* Request version 3 */
@@ -128,7 +151,6 @@ namespace EnhancedBatch
             Console.WriteLine($"Elapsed Time {elapsedMs}");
             Console.WriteLine("\r\n\r\n");
         }
-
 
     }
 }
