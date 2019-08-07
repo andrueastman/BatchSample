@@ -40,6 +40,11 @@ namespace EnhancedBatch
                     {
                         handlerFunc(t.Result);
                     }
+                    else if (t.IsFaulted)
+                    {
+                        Console.WriteLine($"Task failed to send out {httpRequestMessage.ToString()}");
+                        Console.WriteLine(t.Exception.Message);
+                    }
                 });
 
             _taskCollection.Add(task);
@@ -101,10 +106,13 @@ namespace EnhancedBatch
             {
                 await Task.WhenAll(_taskCollection.ToArray());
             }
-            catch (AggregateException e)
+            catch (AggregateException ae)
             {
-                Console.WriteLine(e);
-                throw;
+                foreach (var innerException in ae.InnerExceptions)
+                {
+                    Console.WriteLine(innerException.Message);
+                }
+                throw ae.Flatten();
             }
             finally
             {

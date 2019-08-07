@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System;
+using System.Net.Http;
 using Microsoft.Graph;
 
 namespace EnhancedBatch
@@ -21,6 +22,11 @@ namespace EnhancedBatch
                     {
                         HttpResponseMessage httpResponse = t.Result;
                         responseHandler.HandleResponse<T>(httpResponse).ConfigureAwait(false);
+                    }
+                    else if (t.IsFaulted)
+                    {
+                        Console.WriteLine($"Task failed to send out {request.GetHttpRequestMessage().ToString()}");
+                        Console.WriteLine(t.Exception.Message);
                     }
                 });
         }

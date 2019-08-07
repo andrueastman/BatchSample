@@ -1,34 +1,38 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Graph;
 using Microsoft.Graph.Auth;
 using Microsoft.Identity.Client;
 
 namespace EnhancedBatch
 {
-    class Program
+    public class Program
     {
-        private static Stopwatch _publicWatch;
+        private static Stopwatch _globalStopwatch;
 
         public static async Task Main()
         {
+            /* Configuration Values */
+            MyConfig configuration = InitializeConfig();
+
             /* Do the auth stuff first */
-            const string clientId = "d662ac70-7482-45af-9dc3-c3cde8eeede4";
-            string[] scopes = new string[] { "User.Read", "Calendars.Read"};
-
             IPublicClientApplication publicClientApplication = PublicClientApplicationBuilder
-                .Create(clientId).WithRedirectUri("http://localhost:1234")
+                .Create(configuration.ClientId).WithRedirectUri("http://localhost:1234")
                 .Build();
-
-            InteractiveAuthenticationProvider authenticationProvider = new InteractiveAuthenticationProvider(publicClientApplication, scopes);
+            InteractiveAuthenticationProvider authenticationProvider = new InteractiveAuthenticationProvider(publicClientApplication, configuration.Scopes);
 
             /* Get the client */
             GraphServiceClient graphClient = new GraphServiceClient(authenticationProvider);
+
             /* Get a valid token in cache */
             await AcquireTokenToCache(graphClient);
+
             /* Create a HttpQuery for use */
             HttpQuery query = new HttpQuery(graphClient);
 
@@ -37,7 +41,6 @@ namespace EnhancedBatch
             await Run1(query, graphClient);
             await Run2(query, graphClient);
             Run3(graphClient);
-
         }
 
         /// <summary>
@@ -49,17 +52,17 @@ namespace EnhancedBatch
         {
             /* Request version 0 */
             /* Uses the normal way type */
-            _publicWatch = Stopwatch.StartNew();
+            _globalStopwatch = Stopwatch.StartNew();
             User user = await graphClient.Me.Request().GetAsync();
             Calendar calendar = await graphClient.Me.Calendar.Request().GetAsync();
             Drive drive = await graphClient.Me.Drive.Request().GetAsync();
 
-            Console.WriteLine("Version 0");
+            Console.WriteLine("Version 0 : Normal async/await fashion");
             Console.WriteLine("Display Name user: " + user.DisplayName);
             Console.WriteLine("Calendar Owner Address: " + calendar.Owner.Address);
             Console.WriteLine("Display Drive Type: " + drive.DriveType);
-            _publicWatch.Stop();
-            var elapsedMs = _publicWatch.ElapsedMilliseconds;
+            _globalStopwatch.Stop();
+            var elapsedMs = _globalStopwatch.ElapsedMilliseconds;
             Console.WriteLine($"Elapsed Time {elapsedMs}");
             Console.WriteLine("\r\n\r\n");
         }
@@ -75,18 +78,18 @@ namespace EnhancedBatch
             /* Request version 1 */
             /* Uses a callback */
             ViewModel model = new ViewModel();
-            _publicWatch = Stopwatch.StartNew();
+            _globalStopwatch = Stopwatch.StartNew();
             query.AddRequest<User>(graphClient.Me.Request(), u => model.Me = u);
             query.AddRequest<Calendar>(graphClient.Me.Calendar.Request(), cal => model.Calendar = cal);
             query.AddRequest<Drive>(graphClient.Me.Drive.Request(), dr => model.Drive = dr);
 
             await query.ExecuteAsync();//run them at the same time :)
-            Console.WriteLine("Version 1");
+            Console.WriteLine("Version 1 : AddRequest in typed fashion");
             Console.WriteLine("Display Name user: " + model.Me.DisplayName);
             Console.WriteLine("Display Owner Address: " + model.Calendar.Owner.Address);
             Console.WriteLine("Display Drive Type: " + model.Drive.DriveType);
-            _publicWatch.Stop();
-            var elapsedMs = _publicWatch.ElapsedMilliseconds;
+            _globalStopwatch.Stop();
+            var elapsedMs = _globalStopwatch.ElapsedMilliseconds;
             Console.WriteLine($"Elapsed Time {elapsedMs}");
             Console.WriteLine("\r\n\r\n");
         }
@@ -101,7 +104,7 @@ namespace EnhancedBatch
         {
             /* Request version 2 */
             /* Uses the dynamic type */
-            _publicWatch = Stopwatch.StartNew();
+            _globalStopwatch = Stopwatch.StartNew();
             dynamic result = await query.PopulateAsync(new
             {
                 Me = graphClient.Me.Request(),
@@ -109,12 +112,12 @@ namespace EnhancedBatch
                 Drive = graphClient.Me.Drive.Request()
             });
 
-            Console.WriteLine("Version 2");
+            Console.WriteLine("Version 2 : PopulateAsync with dynamic type");
             Console.WriteLine("Display Name user: " + result.Me.displayName);
             Console.WriteLine("Calendar Owner Address: " + result.Calendar.owner.address);
             Console.WriteLine("Display Drive Type: " + result.Drive.driveType);
-            _publicWatch.Stop();
-            var elapsedMs = _publicWatch.ElapsedMilliseconds;
+            _globalStopwatch.Stop();
+            var elapsedMs = _globalStopwatch.ElapsedMilliseconds;
             Console.WriteLine($"Elapsed Time {elapsedMs}");
             Console.WriteLine("\r\n\r\n");
         }
@@ -138,12 +141,12 @@ namespace EnhancedBatch
             responseHandler.OnClientError(e => Console.WriteLine(e.Message));
             responseHandler.OnServerError(e => Console.WriteLine(e.Message));
 
-            _publicWatch = Stopwatch.StartNew();
+            _globalStopwatch = Stopwatch.StartNew();
             graphClient.Me.Request().SendGet(responseHandler);
             graphClient.Me.Calendar.Request().SendGet(responseHandler);
             graphClient.Me.Drive.Request().SendGet(responseHandler);
 
-            Console.WriteLine("Version 3");
+            Console.WriteLine("Version 3 : Fire and Forget with response handler");
             Console.WriteLine("Requests Fired Away. Awaiting responses :)");
             Console.ReadKey();//wait for the responses
             Console.ReadKey();//wait for the responses
@@ -172,10 +175,11 @@ namespace EnhancedBatch
                         break;
                 }
 
+                //check if everything has been populated so that we can display results.
                 if (null != model.Drive && null != model.Calendar && null != model.Me)
                 {
-                    _publicWatch.Stop();
-                    var elapsedMs = _publicWatch.ElapsedMilliseconds;
+                    _globalStopwatch.Stop();
+                    var elapsedMs = _globalStopwatch.ElapsedMilliseconds;
                     Console.WriteLine($"Elapsed Time {elapsedMs}");
                     Console.WriteLine("\r\n\r\n");
                 }
@@ -194,5 +198,26 @@ namespace EnhancedBatch
             HttpRequestMessage dummyRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/me/");
             await graphClient.AuthenticationProvider.AuthenticateRequestAsync(dummyRequestMessage);
         }
+
+        /// <summary>
+        /// Read from the relevant configuration file the configs we need
+        /// </summary>
+        /// <returns>valid configuration</returns>
+        private static MyConfig InitializeConfig()
+        {
+            MyConfig myConfig = new MyConfig();
+            IConfiguration config = new ConfigurationBuilder()
+                .AddJsonFile("appSettings.json", false, true)
+                .Build();
+            myConfig.ClientId = config["clientId"];
+            myConfig.Scopes = config.GetSection("scopes").GetChildren().Select(x => x.Value).ToArray();
+            return myConfig;
+        }
+    }
+
+    public class MyConfig
+    {
+        public string ClientId { get; set; }
+        public IEnumerable<string> Scopes { get; set; }
     }
 }
