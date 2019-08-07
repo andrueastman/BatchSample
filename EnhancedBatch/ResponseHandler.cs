@@ -16,6 +16,10 @@ namespace EnhancedBatch
         private Action<Exception> _serverExceptionHandler;
         private Action<Exception> _clientExceptionHandler;
         private readonly Dictionary<Type, object> _delegateMap;
+
+        /// <summary>
+        /// Constructor for the class to initialise any importantly needed stuff.
+        /// </summary>
         public ResponseHandler()
         {
             _delegateMap = new Dictionary<Type, object>();
@@ -60,9 +64,9 @@ namespace EnhancedBatch
         /// a response for the request</param>
         public async Task HandleResponse<T>(HttpResponseMessage responseMessage)
         {
-            if (responseMessage.StatusCode.CompareTo(HttpStatusCode.BadRequest) > 0 )
+            //check if in the 500s to "simulate" a sever error
+            if ((int)responseMessage.StatusCode >= (int)HttpStatusCode.InternalServerError)
             {
-                //check if in the 400s
                 _serverExceptionHandler(new ServiceException(new Error
                 {
                     Message = $"HTTP Error {responseMessage.StatusCode}"
@@ -75,10 +79,10 @@ namespace EnhancedBatch
                 if (responseMessage.Content == null)
                     return;
                  
-                var responseString = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
-                var returnObject = JsonConvert.DeserializeObject<T>(responseString);
+                string responseString = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
+                T returnObject = JsonConvert.DeserializeObject<T>(responseString);
+                //execute the success action
                 InvokeSuccessAction(returnObject);
-
             }
             catch (Exception e)
             {
@@ -88,7 +92,7 @@ namespace EnhancedBatch
         }
 
         /// <summary>
-        /// Invoke the set action for the object.
+        /// Invoke the set action for the object type
         /// </summary>
         /// <typeparam name="T">Object type being received</typeparam>
         /// <param name="item">Object to be performed action on.</param>

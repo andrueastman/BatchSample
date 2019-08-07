@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Graph;
 
@@ -9,7 +10,7 @@ namespace EnhancedBatch
 {
     public class HttpQuery
     {
-        public GraphServiceClient GraphClient { get; }
+        private readonly GraphServiceClient _graphClient;
         private readonly List<Task> _taskCollection;
 
         /// <summary>
@@ -18,9 +19,8 @@ namespace EnhancedBatch
         /// <param name="graphClient">Client to provide necessary request build mechanisms</param>
         public HttpQuery(GraphServiceClient graphClient)
         {
-            GraphClient = graphClient;
+            _graphClient = graphClient;
             _taskCollection = new List<Task>();
-            TokenBarrier().Wait();
         }
 
         /// <summary>
@@ -33,13 +33,14 @@ namespace EnhancedBatch
         {
             HttpRequestMessage httpRequestMessage = request.GetHttpRequestMessage();
 
-            Task task = SendMessageAsyncTask<T>(httpRequestMessage).ContinueWith(t =>
-            {
-                if (t.IsCompleted)
+            Task task = SendMessageAsyncTask<T>(httpRequestMessage).
+                ContinueWith(t =>
                 {
-                    handlerFunc(t.Result);
-                }
-            });
+                    if (t.IsCompleted)
+                    {
+                        handlerFunc(t.Result);
+                    }
+                });
 
             _taskCollection.Add(task);
         }
@@ -52,13 +53,13 @@ namespace EnhancedBatch
         /// <returns></returns>
         private async Task<T> SendMessageAsyncTask<T>(HttpRequestMessage httpRequestMessage)
         {
-            HttpResponseMessage response =  await GraphClient.HttpProvider.SendAsync(httpRequestMessage).ConfigureAwait(false);
+            HttpResponseMessage response =  await _graphClient.HttpProvider.SendAsync(httpRequestMessage).ConfigureAwait(false);
 
             if (response.Content == null)
                 return default;
 
-            var responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            return GraphClient.HttpProvider.Serializer.DeserializeObject<T>(responseString);
+            string responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            return _graphClient.HttpProvider.Serializer.DeserializeObject<T>(responseString);
 
         }
 
@@ -70,23 +71,23 @@ namespace EnhancedBatch
         public async Task<dynamic> PopulateAsync(object model)
         {
             dynamic returnObject = new ExpandoObject();
-            var dictionary = (IDictionary<string, object>)returnObject;
+            var dictionary = (IDictionary<string, object>)returnObject;//cast the expando to a dictionary
 
-            foreach (var typeArguments in model.GetType().GetProperties())
+            //loop through each of the nested IBaseRequest objects present in the model object
+            foreach (PropertyInfo propertyInfo in model.GetType().GetProperties())
             {
                 //make sure the type is a base request
-                if (typeArguments.GetValue(model) is IBaseRequest request)
+                if (propertyInfo.GetValue(model) is IBaseRequest request)
                 {
                     AddRequest<dynamic>(request,u =>
                     {
                         //map the name with the object that comes back
-                        dictionary.Add(typeArguments.Name, u);
+                        dictionary.Add(propertyInfo.Name, u);
                     });
                 }
             }
-
+            //fire away
             await ExecuteAsync();
-
             return returnObject;
         }
 
@@ -109,20 +110,6 @@ namespace EnhancedBatch
             {
                 _taskCollection.Clear();
             }
-        }
-
-        /// <summary>
-        /// This is a barrier synchronization mechanism/hack to acquire the token to have in cache
-        /// so that requests being sent out in parallel by this instance do not necessarily have to spend time fetching tokens
-        /// and use the local copy instead.
-        /// </summary>
-        /// <returns></returns>
-        private async Task TokenBarrier()
-        {
-            //Just authenticate a dummy message but no need to send it out coz we just need a valid token in the cache
-            var dummyRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/me/");
-            await GraphClient.AuthenticationProvider.AuthenticateRequestAsync(dummyRequestMessage);
-//            Console.WriteLine("Token barrier crossed");
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Microsoft.Graph;
+﻿using System.ComponentModel;
+using Microsoft.Graph;
 
 namespace EnhancedBatch
 {
@@ -6,10 +7,46 @@ namespace EnhancedBatch
     /// Model class for holding data that comes back as a response.
     /// One could probable extend this class and add more properties to it.
     /// </summary>
-    public class ViewModel
+    public class ViewModel : INotifyPropertyChanged
     {
-        public User Me { get; set; }
-        public Calendar Calendar { get; set; }
-        public Drive Drive { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
+        private User _me;
+        private Calendar _calendar;
+        private Drive _drive;
+
+        public User Me
+        {
+            get => _me;
+            set {
+                _me = value;
+                RaisePropertyChanged(nameof(Me));
+            }
+        }
+
+        public Calendar Calendar
+        {
+            get => _calendar;
+            set
+            {
+                _calendar = value;
+                RaisePropertyChanged(nameof(Calendar));
+            }
+        }
+
+        public Drive Drive
+        {
+            get => _drive;
+            set
+            {
+                _drive = value;
+                RaisePropertyChanged(nameof(Drive));
+            }
+        }
+        
+        private void RaisePropertyChanged(string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
     }
 }
