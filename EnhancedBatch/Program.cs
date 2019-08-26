@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -14,8 +13,6 @@ namespace EnhancedBatch
 {
     public class Program
     {
-        private static Stopwatch _globalStopwatch;
-
         public static async Task Main()
         {
             /* Configuration Values */
@@ -52,7 +49,6 @@ namespace EnhancedBatch
         {
             /* Request version 0 */
             /* Uses the normal way type */
-            _globalStopwatch = Stopwatch.StartNew();
             User user = await graphClient.Me.Request().GetAsync();
             Calendar calendar = await graphClient.Me.Calendar.Request().GetAsync();
             Drive drive = await graphClient.Me.Drive.Request().GetAsync();
@@ -61,9 +57,58 @@ namespace EnhancedBatch
             Console.WriteLine("Display Name user: " + user.DisplayName);
             Console.WriteLine("Calendar Owner Address: " + calendar.Owner.Address);
             Console.WriteLine("Display Drive Type: " + drive.DriveType);
-            _globalStopwatch.Stop();
-            var elapsedMs = _globalStopwatch.ElapsedMilliseconds;
-            Console.WriteLine($"Elapsed Time {elapsedMs}");
+            Console.WriteLine("\r\n\r\n");
+        }
+
+        /// <summary>
+        /// Run the request in the normal fashion.
+        /// </summary>
+        /// <param name="graphClient"></param>
+        /// <returns></returns>
+        public static void Run00(GraphServiceClient graphClient)
+        {
+            User user = null;
+            Calendar calendar = null;
+            Drive drive = null;
+            Task[] tasks = new Task[3];
+
+            /* Request version 0 part one*/
+            /* Uses the normal way with user created tasks */
+            //user task
+            tasks[0] = graphClient.Me.Request().GetAsync()
+                .ContinueWith(t => {
+                    if (t.IsCompleted)
+                    {
+                        user = t.Result;
+                    }
+                });
+
+            //calendar task
+            tasks[1] = graphClient.Me.Calendar.Request().GetAsync()
+                .ContinueWith(t => {
+                    if (t.IsCompleted)
+                    {
+                        calendar = t.Result;
+                    }
+                });
+
+            //drive task
+            tasks[2] = graphClient.Me.Drive.Request().GetAsync()
+                .ContinueWith(t => {
+                    if (t.IsCompleted)
+                    {
+                        drive = t.Result;
+                    }
+                });
+
+            //wait for all tasks
+            Task.WaitAll(tasks);
+
+            //Print out the results
+            Console.WriteLine("Version 0 : Normal async/await fashion");
+            Console.WriteLine("Display Name user: " + user.DisplayName);
+            Console.WriteLine("Calendar Owner Address: " + calendar.Owner.Address);
+            Console.WriteLine("Display Drive Type: " + drive.DriveType);
             Console.WriteLine("\r\n\r\n");
         }
 
@@ -76,9 +121,8 @@ namespace EnhancedBatch
         private static async Task Run1(HttpQuery query, GraphServiceClient graphClient)
         {
             /* Request version 1 */
-            /* Uses a callback */
+            /* Parallel Requests Task */
             ViewModel model = new ViewModel();
-            _globalStopwatch = Stopwatch.StartNew();
             query.AddRequest<User>(graphClient.Me.Request(), u => model.Me = u);
             query.AddRequest<Calendar>(graphClient.Me.Calendar.Request(), cal => model.Calendar = cal);
             query.AddRequest<Drive>(graphClient.Me.Drive.Request(), dr => model.Drive = dr);
@@ -88,9 +132,6 @@ namespace EnhancedBatch
             Console.WriteLine("Display Name user: " + model.Me.DisplayName);
             Console.WriteLine("Display Owner Address: " + model.Calendar.Owner.Address);
             Console.WriteLine("Display Drive Type: " + model.Drive.DriveType);
-            _globalStopwatch.Stop();
-            var elapsedMs = _globalStopwatch.ElapsedMilliseconds;
-            Console.WriteLine($"Elapsed Time {elapsedMs}");
             Console.WriteLine("\r\n\r\n");
         }
 
@@ -103,8 +144,8 @@ namespace EnhancedBatch
         private static async Task Run2(HttpQuery query, GraphServiceClient graphClient)
         {
             /* Request version 2 */
+            /* Composed Response */
             /* Uses the dynamic type */
-            _globalStopwatch = Stopwatch.StartNew();
             dynamic result = await query.PopulateAsync(new
             {
                 Me = graphClient.Me.Request(),
@@ -116,9 +157,6 @@ namespace EnhancedBatch
             Console.WriteLine("Display Name user: " + result.Me.displayName);
             Console.WriteLine("Calendar Owner Address: " + result.Calendar.owner.address);
             Console.WriteLine("Display Drive Type: " + result.Drive.driveType);
-            _globalStopwatch.Stop();
-            var elapsedMs = _globalStopwatch.ElapsedMilliseconds;
-            Console.WriteLine($"Elapsed Time {elapsedMs}");
             Console.WriteLine("\r\n\r\n");
         }
 
@@ -130,7 +168,7 @@ namespace EnhancedBatch
         private static void Run3(GraphServiceClient graphClient)
         {
             /* Request version 3 */
-            /* Uses the dynamic type */
+            /* Declared Response */
             ViewModel viewModel = new ViewModel();
             //register an event handler for the model
             viewModel.PropertyChanged += ModelPropertyChanged;
@@ -141,7 +179,6 @@ namespace EnhancedBatch
             responseHandler.OnClientError(e => Console.WriteLine(e.Message));
             responseHandler.OnServerError(e => Console.WriteLine(e.Message));
 
-            _globalStopwatch = Stopwatch.StartNew();
             graphClient.Me.Request().SendGet(responseHandler);
             graphClient.Me.Calendar.Request().SendGet(responseHandler);
             graphClient.Me.Drive.Request().SendGet(responseHandler);
@@ -178,9 +215,6 @@ namespace EnhancedBatch
                 //check if everything has been populated so that we can display results.
                 if (null != model.Drive && null != model.Calendar && null != model.Me)
                 {
-                    _globalStopwatch.Stop();
-                    var elapsedMs = _globalStopwatch.ElapsedMilliseconds;
-                    Console.WriteLine($"Elapsed Time {elapsedMs}");
                     Console.WriteLine("\r\n\r\n");
                 }
             }
