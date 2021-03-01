@@ -9,7 +9,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Graph" Version="1.16.0" />
+    <PackageReference Include="Microsoft.Graph" Version="3.25.0" />
     <PackageReference Include="Microsoft.Graph.Auth" Version="1.0.0-preview.0" />
     <PackageReference Include="Microsoft.Graph.Core" Version="1.16.0" />
     <PackageReference Include="Microsoft.Identity.Client" Version="4.2.1" />
