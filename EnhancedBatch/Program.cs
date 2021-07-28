@@ -113,9 +113,11 @@ namespace EnhancedBatch
             });
 
             Console.WriteLine("Version 2 : PopulateAsync with dynamic type");
-            Console.WriteLine("Display Name user: " + result.Me.displayName);
-            Console.WriteLine("Calendar Owner Address: " + result.Calendar.owner.address);
-            Console.WriteLine("Display Drive Type: " + result.Drive.driveType);
+
+            // Using System.Text.Json returns a JsonElement Object not dynamic objects inside
+            Console.WriteLine("Display Name user: " + result.Me.GetProperty("displayName").GetString());
+            Console.WriteLine("Calendar Owner Address: " + result.Calendar.GetProperty("owner").GetProperty("address").GetString());
+            Console.WriteLine("Display Drive Type: " + result.Drive.GetProperty("driveType").GetString());
             _globalStopwatch.Stop();
             var elapsedMs = _globalStopwatch.ElapsedMilliseconds;
             Console.WriteLine($"Elapsed Time {elapsedMs}");

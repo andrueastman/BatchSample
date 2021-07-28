@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Graph;
-using Newtonsoft.Json;
 
 namespace EnhancedBatch
 {
@@ -79,8 +79,8 @@ namespace EnhancedBatch
                 if (responseMessage.Content == null)
                     return;
                  
-                string responseString = await responseMessage.Content.ReadAsStringAsync().ConfigureAwait(false);
-                T returnObject = JsonConvert.DeserializeObject<T>(responseString);
+                var responseSteam = await responseMessage.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                T returnObject = await JsonSerializer.DeserializeAsync<T>(responseSteam);
                 //execute the success action
                 InvokeSuccessAction(returnObject);
             }
