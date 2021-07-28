@@ -6,15 +6,3 @@ updates:
     interval: monthly
     time: "02:00"
   open-pull-requests-limit: 10
-  ignore:
-  - dependency-name: Microsoft.Graph
-    versions:
-    - 3.21.0
-    - 3.23.0
-  - dependency-name: Microsoft.Identity.Client
-    versions:
-    - 4.24.0
-    - 4.25.0
-  - dependency-name: Microsoft.Graph.Core
-    versions:
-    - 1.23.0
